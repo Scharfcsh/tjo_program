@@ -57,9 +57,15 @@ export default function Page() {
 
         <div className="mt-6 inline-flex items-center gap-2 bg-primary px-4 py-2 text-primary-foreground">
           <Megaphone className="size-5" />
-          <span className="text-lg font-bold tracking-tight">
-            CAMPUS AMBASSADORS PROGRAM
-          </span>
+          <Button asChild size="lg">
+            <Link href="/register">
+              <BadgeCheck className="size-6" />
+              
+              <span className="text-lg font-bold tracking-tight uppercase">
+              Register as an ambassador
+            </span>
+            </Link>
+          </Button>
         </div>
       </section>
 
@@ -122,12 +128,12 @@ export default function Page() {
           <br />
           <span className="text-primary">BUILD YOUR FUTURE.</span>
         </h2>
-        <Button asChild size="lg">
+        {/* <Button asChild size="lg">
           <Link href="/register">
             <BadgeCheck className="size-4" />
             Register as an ambassador
           </Link>
-        </Button>
+        </Button> */}
       </section>
     </main>
   )
