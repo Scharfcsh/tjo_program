@@ -2,11 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Inbox, Users } from "lucide-react"
+import { Inbox, Sparkles, Users } from "lucide-react"
 
 export function AdminNav({ pendingCount }: { pendingCount: number }) {
   const pathname = usePathname()
-  if (pathname === "/admin/login") return null
+  // Hidden on login, and on the showcase pages so they read as a clean,
+  // standalone dashboard (no admin chrome / other tabs) for screenshots.
+  if (pathname === "/admin/login" || pathname.startsWith("/admin/showcase")) {
+    return null
+  }
 
   const tabs = [
     { href: "/admin", label: "Applications", icon: Users, exact: true },
@@ -16,6 +20,7 @@ export function AdminNav({ pendingCount }: { pendingCount: number }) {
       icon: Inbox,
       badge: pendingCount,
     },
+    { href: "/admin/showcase", label: "Showcase", icon: Sparkles },
   ]
 
   return (

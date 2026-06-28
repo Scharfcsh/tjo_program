@@ -8,6 +8,7 @@ import { SEMESTERS } from "@/lib/validation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CollegeCombobox } from "./CollegeCombobox"
 import {
   Card,
   CardContent,
@@ -28,6 +29,7 @@ type FieldErrors = Record<string, string[] | undefined>
 export default function RegisterPage() {
   const [submitting, setSubmitting] = React.useState(false)
   const [errors, setErrors] = React.useState<FieldErrors>({})
+  const [college, setCollege] = React.useState("")
   const [semester, setSemester] = React.useState("")
   const [done, setDone] = React.useState(false)
 
@@ -39,7 +41,7 @@ export default function RegisterPage() {
     const form = new FormData(event.currentTarget)
     const payload = {
       name: String(form.get("name") ?? ""),
-      college: String(form.get("college") ?? ""),
+      college,
       mobile: String(form.get("mobile") ?? ""),
       email: String(form.get("email") ?? ""),
       semester,
@@ -104,12 +106,7 @@ export default function RegisterPage() {
               <Input id="name" name="name" placeholder="Aman Adhikari" required />
             </Field>
             <Field label="College" name="college" errors={errors.college}>
-              <Input
-                id="college"
-                name="college"
-                placeholder="Your college / university"
-                required
-              />
+              <CollegeCombobox id="college" value={college} onChange={setCollege} />
             </Field>
             <Field label="Mobile number" name="mobile" errors={errors.mobile}>
               <Input

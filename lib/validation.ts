@@ -39,3 +39,33 @@ export const submissionSchema = z.object({
 })
 
 export type SubmissionInput = z.infer<typeof submissionSchema>
+
+export const REFERRAL_PLANS = ["free", "pro", "premium"] as const
+export type ReferralPlan = (typeof REFERRAL_PLANS)[number]
+
+export const referralEntrySchema = z.object({
+  name: z.string().trim().min(1, "Name required").max(80),
+  email: z.string().trim().max(120),
+  plan: z.enum(REFERRAL_PLANS),
+  joinedAt: z.coerce.date(),
+  earned: z.coerce.number().min(0),
+})
+
+export const referralsSchema = z.object({
+  referrals: z.array(referralEntrySchema).max(200),
+})
+
+export type ReferralEntryInput = z.infer<typeof referralEntrySchema>
+
+export const showcaseSchema = z.object({
+  displayName: z.string().trim().min(1, "Enter a display name").max(80),
+  referralLink: z.string().trim().max(300),
+  rank: z.coerce.number().int().min(0).max(1_000_000),
+  totalEarned: z.coerce.number().min(0),
+  monthEarned: z.coerce.number().min(0),
+  totalReferrals: z.coerce.number().int().min(0),
+  proSubs: z.coerce.number().int().min(0),
+  premiumSubs: z.coerce.number().int().min(0),
+})
+
+export type ShowcaseInput = z.infer<typeof showcaseSchema>

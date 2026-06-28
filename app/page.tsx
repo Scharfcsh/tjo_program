@@ -13,6 +13,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Footer } from "@/components/Footer"
 
 const PERKS = [
   { icon: IndianRupee, title: "Earn ₹10,000", hint: "per month" },
@@ -32,12 +33,12 @@ const ROLES = [
 
 export default function Page() {
   return (
+    <>
     <main className="mx-auto w-full max-w-5xl px-6 py-12">
       {/* Brand bar */}
-      <header className="flex flex-col gap-1 border-b pb-6">
-        <p className="text-2xl font-extrabold tracking-tight">
-          TOPJOB<span className="text-primary">OFFER</span>
-        </p>
+      <header className="flex flex-col gap-2 border-b pb-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/tjo-logo.svg" alt="TopJobOffer" className="h-10 w-auto self-start" />
         <p className="text-sm text-muted-foreground">
           Empowering Careers. Enriching Futures.
         </p>
@@ -136,5 +137,7 @@ export default function Page() {
         </Button> */}
       </section>
     </main>
+    <Footer />
+    </>
   )
 }
