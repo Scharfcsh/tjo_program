@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/db"
 import { Student } from "@/lib/models/Student"
 import { getStudentId } from "@/lib/session"
-import { syncMissionStats, getStudentRank } from "@/lib/points"
+import { syncMissionStats, getCollegeRankForStudent } from "@/lib/points"
 
 export async function POST() {
   const studentId = await getStudentId()
@@ -31,7 +31,7 @@ export async function POST() {
 
   try {
     const { breakdown, lastSyncedAt } = await syncMissionStats(studentId, student.email)
-    const rank = await getStudentRank(studentId)
+    const rank = await getCollegeRankForStudent(studentId)
     return NextResponse.json({
       ok: true,
       breakdown,

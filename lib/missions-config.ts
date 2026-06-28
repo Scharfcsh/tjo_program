@@ -115,22 +115,40 @@ export const WHATSAPP_MESSAGE_TEMPLATE =
   "🚀 Land your dream job with TopJobOffer! I'm a Student Ambassador and I can get you " +
   "early access + perks. Sign up here: https://topjoboffer.com — DM me if you have questions!"
 
-export type RewardTier = {
-  position: string
-  label: string
-  reward: string
-  /** Inclusive rank range this tier covers (1-based). */
-  from: number
-  to: number
-}
+export type RewardMilestone = { points: number; reward: string }
 
-export const REWARD_TIERS: RewardTier[] = [
-  { position: "1st", label: "Champion", reward: "Cash prize + iPad", from: 1, to: 1 },
-  { position: "2nd–3rd", label: "Runner-up", reward: "Premium plan + hoodie", from: 2, to: 3 },
-  { position: "4th–10th", label: "Top 10", reward: "Pro plan + swag", from: 4, to: 10 },
+/** Points milestones every ambassador can unlock (independent of rank). */
+export const REWARD_MILESTONES: RewardMilestone[] = [
+  { points: 500, reward: "Free Pro plan" },
+  { points: 1000, reward: "Premium plan" },
+  { points: 1500, reward: "Hoodies & swag" },
+  { points: 2000, reward: "₹10,000 cash prize" },
 ]
 
-export function rewardForRank(rank: number | null): RewardTier | null {
-  if (!rank) return null
-  return REWARD_TIERS.find((t) => rank >= t.from && rank <= t.to) ?? null
+/** The next milestone not yet reached, or null if all are unlocked. */
+export function nextMilestone(points: number): RewardMilestone | null {
+  return REWARD_MILESTONES.find((m) => points < m.points) ?? null
+}
+
+/** The best milestone already reached, or null if none yet. */
+export function unlockedReward(points: number): RewardMilestone | null {
+  let best: RewardMilestone | null = null
+  for (const m of REWARD_MILESTONES) {
+    if (points >= m.points) best = m
+  }
+  return best
+}
+
+/** Progress toward the next milestone (from the previous threshold). */
+export function milestoneProgress(points: number): {
+  next: RewardMilestone | null
+  remaining: number
+  pct: number
+} {
+  const next = nextMilestone(points)
+  if (!next) return { next: null, remaining: 0, pct: 100 }
+  const prevThreshold = unlockedReward(points)?.points ?? 0
+  const span = next.points - prevThreshold
+  const pct = span > 0 ? Math.min(100, ((points - prevThreshold) / span) * 100) : 0
+  return { next, remaining: next.points - points, pct }
 }

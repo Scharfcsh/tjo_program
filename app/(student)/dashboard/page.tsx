@@ -7,10 +7,10 @@ import { Submission } from "@/lib/models/Submission"
 import { getStudentId } from "@/lib/session"
 import {
   getMissionBreakdownForStudent,
-  getStudentRank,
+  getCollegeRankForStudent,
   syncMissionStats,
 } from "@/lib/points"
-import { rewardForRank, SUBMISSION_TYPES, type SubmissionType } from "@/lib/missions-config"
+import { SUBMISSION_TYPES, type SubmissionType } from "@/lib/missions-config"
 
 import { DashboardClient, type SubmissionView } from "./DashboardClient"
 
@@ -56,8 +56,7 @@ export default async function DashboardPage() {
   }
 
   const { breakdown, lastSyncedAt } = await getMissionBreakdownForStudent(studentId)
-  const rank = await getStudentRank(studentId)
-  const reward = rewardForRank(rank)
+  const rank = await getCollegeRankForStudent(studentId)
 
   const submissionDocs = await Submission.find({ studentId })
     .sort({ createdAt: -1 })
@@ -81,7 +80,6 @@ export default async function DashboardPage() {
         name={student.name}
         initialBreakdown={breakdown}
         initialRank={rank}
-        initialReward={reward}
         daysLeft={daysLeft(student.selectedAt)}
         lastSyncedAt={lastSyncedAt ? lastSyncedAt.toISOString() : null}
         initialSubmissions={submissions}

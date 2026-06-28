@@ -16,12 +16,13 @@ import { toast } from "sonner"
 import type { MissionBreakdown, MissionRow } from "@/lib/points"
 import {
   MISSIONS,
-  REWARD_TIERS,
+  REWARD_MILESTONES,
+  milestoneProgress,
+  nextMilestone,
   WHATSAPP_GROUP_URL,
   WHATSAPP_MESSAGE_TEMPLATE,
   type MissionDef,
   type MissionKey,
-  type RewardTier,
   type SubmissionType,
 } from "@/lib/missions-config"
 import { Button } from "@/components/ui/button"
@@ -50,7 +51,6 @@ export function DashboardClient({
   name,
   initialBreakdown,
   initialRank,
-  initialReward,
   daysLeft,
   lastSyncedAt,
   initialSubmissions,
@@ -59,7 +59,6 @@ export function DashboardClient({
   name: string
   initialBreakdown: MissionBreakdown
   initialRank: number | null
-  initialReward: RewardTier | null
   daysLeft: number
   lastSyncedAt: string | null
   initialSubmissions: Record<SubmissionType, SubmissionView[]>
@@ -68,7 +67,6 @@ export function DashboardClient({
   const router = useRouter()
   const [breakdown, setBreakdown] = React.useState(initialBreakdown)
   const [rank, setRank] = React.useState(initialRank)
-  const [reward, setReward] = React.useState(initialReward)
   const [syncedAt, setSyncedAt] = React.useState(lastSyncedAt)
   const [syncing, setSyncing] = React.useState(false)
   const [submissions, setSubmissions] = React.useState(initialSubmissions)
@@ -84,7 +82,6 @@ export function DashboardClient({
       }
       setBreakdown(data.breakdown as MissionBreakdown)
       setRank(data.rank as number | null)
-      setReward(rewardFor(data.rank as number | null))
       setSyncedAt(data.lastSyncedAt as string)
       toast.success(`Synced — ${data.total} points`)
       router.refresh()
@@ -94,6 +91,8 @@ export function DashboardClient({
       setSyncing(false)
     }
   }
+
+  const nextReward = nextMilestone(breakdown.total)
 
   function onSubmitted(type: SubmissionType, submission: SubmissionView) {
     setSubmissions((prev) => ({ ...prev, [type]: [submission, ...prev[type]] }))
@@ -126,11 +125,15 @@ export function DashboardClient({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Points balance" value={breakdown.total.toLocaleString()} />
-        <Stat label="Leaderboard rank" value={rank ? `#${rank}` : "—"} />
+        <Stat label="College rank" value={rank ? `#${rank}` : "—"} />
         <Stat
-          label="Projected reward"
-          value={reward ? reward.reward : "Keep climbing"}
-          hint={reward?.label}
+          label="Next reward"
+          value={nextReward ? nextReward.reward : "All unlocked 🎉"}
+          hint={
+            nextReward
+              ? `${(nextReward.points - breakdown.total).toLocaleString()} pts to go`
+              : undefined
+          }
         />
       </div>
 
@@ -176,7 +179,7 @@ export function DashboardClient({
         })}
       </section>
 
-      <RewardsTable currentRank={rank} />
+      <RewardsTable points={breakdown.total} />
     </div>
   )
 }
@@ -404,36 +407,52 @@ function WhatsappJoinCard({ initialJoined }: { initialJoined: boolean }) {
   )
 }
 
-function RewardsTable({ currentRank }: { currentRank: number | null }) {
+function RewardsTable({ points }: { points: number }) {
+  const { next, remaining, pct } = milestoneProgress(points)
   return (
     <Card className="py-4">
       <CardHeader className="pb-0">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Trophy className="size-4 text-primary" />
-          Reward tiers
+          Reward milestones
         </CardTitle>
-        <CardDescription>Final standings at the end of the 30 days.</CardDescription>
+        <CardDescription>
+          {next
+            ? `${remaining.toLocaleString()} points to your next reward: ${next.reward}`
+            : "You've unlocked every reward 🎉"}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        {REWARD_TIERS.map((tier) => {
-          const active =
-            currentRank !== null &&
-            currentRank >= tier.from &&
-            currentRank <= tier.to
-          return (
-            <div
-              key={tier.position}
-              className={
-                "flex items-center justify-between border px-3 py-2 text-sm " +
-                (active ? "border-primary bg-primary/10" : "border-border")
-              }
-            >
-              <span className="font-medium">{tier.position}</span>
-              <span className="text-muted-foreground">{tier.label}</span>
-              <span>{tier.reward}</span>
-            </div>
-          )
-        })}
+      <CardContent className="flex flex-col gap-3">
+        <Progress value={pct} />
+        <div className="flex flex-col gap-2">
+          {REWARD_MILESTONES.map((m) => {
+            const unlocked = points >= m.points
+            const isNext = next?.points === m.points
+            return (
+              <div
+                key={m.points}
+                className={
+                  "flex items-center justify-between border px-3 py-2 text-sm " +
+                  (unlocked
+                    ? "border-primary bg-primary/10"
+                    : isNext
+                      ? "border-primary"
+                      : "border-border")
+                }
+              >
+                <span className="flex items-center gap-2">
+                  {unlocked ? (
+                    <Check className="size-4 text-primary" />
+                  ) : (
+                    <span className="size-4" />
+                  )}
+                  <span className="font-medium">{m.points.toLocaleString()} pts</span>
+                </span>
+                <span className={unlocked ? "" : "text-muted-foreground"}>{m.reward}</span>
+              </div>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )
@@ -458,7 +477,3 @@ function groupRows(rows: MissionRow[]): RowGroup[] {
   return groups
 }
 
-function rewardFor(rank: number | null): RewardTier | null {
-  if (!rank) return null
-  return REWARD_TIERS.find((t) => rank >= t.from && rank <= t.to) ?? null
-}

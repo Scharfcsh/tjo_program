@@ -1,6 +1,7 @@
 import type { HydratedDocument } from "mongoose"
 
 import { Mission, type MissionDoc } from "./models/Mission"
+import { Student } from "./models/Student"
 import { PointsLedger } from "./models/PointsLedger"
 import { Submission } from "./models/Submission"
 import {
@@ -191,15 +192,17 @@ export type LeaderboardRow = {
   points: number
 }
 
-export async function getLeaderboard(limit = 20): Promise<LeaderboardRow[]> {
+/** Leaderboard scoped to a single college, ranked by points within that cohort. */
+export async function getCollegeLeaderboard(
+  college: string,
+  limit = 50
+): Promise<LeaderboardRow[]> {
   const rows = await Mission.aggregate<{
     studentId: unknown
     points: number
     name: string
     college: string
   }>([
-    { $sort: { pointsTotal: -1, updatedAt: 1 } },
-    { $limit: limit },
     {
       $lookup: {
         from: "students",
@@ -209,6 +212,9 @@ export async function getLeaderboard(limit = 20): Promise<LeaderboardRow[]> {
       },
     },
     { $unwind: "$student" },
+    { $match: { "student.college": college } },
+    { $sort: { pointsTotal: -1, updatedAt: 1 } },
+    { $limit: limit },
     {
       $project: {
         _id: 0,
@@ -229,13 +235,32 @@ export async function getLeaderboard(limit = 20): Promise<LeaderboardRow[]> {
   }))
 }
 
-export async function getStudentRank(studentId: string): Promise<number | null> {
-  const mine = await Mission.findOne({ studentId }).select("pointsTotal").lean()
-  if (!mine) return null
-  const higher = await Mission.countDocuments({
-    pointsTotal: { $gt: mine.pointsTotal },
-  })
-  return higher + 1
+/** The student's rank among ambassadors from their own college. */
+export async function getCollegeRankForStudent(
+  studentId: string
+): Promise<number | null> {
+  const [student, mine] = await Promise.all([
+    Student.findById(studentId).select("college").lean(),
+    Mission.findOne({ studentId }).select("pointsTotal").lean(),
+  ])
+  if (!student || !mine) return null
+
+  const higher = await Mission.aggregate<{ n: number }>([
+    { $match: { pointsTotal: { $gt: mine.pointsTotal } } },
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student",
+      },
+    },
+    { $unwind: "$student" },
+    { $match: { "student.college": student.college } },
+    { $count: "n" },
+  ])
+
+  return (higher[0]?.n ?? 0) + 1
 }
 
 function toObjectId(id: string) {
