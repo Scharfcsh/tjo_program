@@ -113,7 +113,7 @@ export default async function ShowcasePage() {
             <h1 className="text-2xl font-bold tracking-tight">Invite &amp; Earn</h1>
             <Link
               href="/admin/showcase/edit"
-              className="inline-flex items-center gap-1.5 text-xs text-[#8A938D] underline-offset-4 hover:text-foreground hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs text-white underline-offset-4 hover:text-foreground hover:underline"
             >
               <Pencil className="size-3" />
               Edit numbers
