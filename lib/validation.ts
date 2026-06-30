@@ -27,12 +27,6 @@ export const registerSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>
 
-export const socialSubmissionSchema = z.object({
-  url: z.url("Enter a valid post URL"),
-})
-
-export type SocialSubmissionInput = z.infer<typeof socialSubmissionSchema>
-
 export const submissionSchema = z.object({
   type: z.enum(SUBMISSION_TYPES),
   url: z.url("Enter a valid link"),

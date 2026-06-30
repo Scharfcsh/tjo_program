@@ -2,10 +2,8 @@ import Link from "next/link"
 
 import { connectToDatabase } from "@/lib/db"
 import { Student, STUDENT_STATUSES, type StudentStatus } from "@/lib/models/Student"
-import { Onboarding } from "@/lib/models/Onboarding"
 import { Mission } from "@/lib/models/Mission"
 import { Submission } from "@/lib/models/Submission"
-import type { ReviewStatus } from "@/lib/onboarding-service"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -39,22 +37,6 @@ export default async function AdminPage({
   const query = activeStatus ? { status: activeStatus } : {}
   const docs = await Student.find(query).sort({ createdAt: -1 }).limit(200).lean()
 
-  // Social-post review state for the listed students, keyed by id.
-  const onboardings = await Onboarding.find({
-    studentId: { $in: docs.map((d) => d._id) },
-  })
-    .select("studentId socialShared")
-    .lean()
-  const socialById = new Map(
-    onboardings.map((o) => [
-      String(o.studentId),
-      {
-        url: o.socialShared?.url ?? null,
-        reviewStatus: (o.socialShared?.reviewStatus as ReviewStatus | undefined) ?? null,
-      },
-    ])
-  )
-
   // Global points + rank for monitoring (ranked by points, earliest update wins ties).
   const missions = await Mission.find()
     .select("studentId pointsTotal")
@@ -80,7 +62,6 @@ export default async function AdminPage({
       semester: d.semester,
       status: d.status as StudentStatus,
       referralCode: d.referralCode,
-      social: socialById.get(id) ?? { url: null, reviewStatus: null },
       points: pointsById.get(id) ?? null,
       rank: rankById.get(id) ?? null,
     }
@@ -180,7 +161,7 @@ export default async function AdminPage({
                   {s.rank !== null ? `#${s.rank}` : "—"}
                 </TableCell>
                 <TableCell className="text-right">
-                  <StudentActions id={s.id} status={s.status} social={s.social} />
+                  <StudentActions id={s.id} status={s.status} />
                 </TableCell>
               </TableRow>
             ))}

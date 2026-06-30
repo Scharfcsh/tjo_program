@@ -118,4 +118,4 @@ export function getTopJobOfferApi(): TopJobOfferApi {
   return process.env.TJO_API_MODE === "live" ? liveApi() : mockApi
 }
 
-export const REFERRALS_REQUIRED = 10
+export const REFERRALS_REQUIRED = 3

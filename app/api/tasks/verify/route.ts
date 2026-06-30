@@ -23,13 +23,6 @@ export async function POST(request: Request) {
   if (!task || !ONBOARDING_TASK_KEYS.includes(task)) {
     return NextResponse.json({ ok: false, error: "Unknown task" }, { status: 400 })
   }
-  if (task === "socialShared") {
-    return NextResponse.json(
-      { ok: false, error: "Submit your social post for review instead." },
-      { status: 400 }
-    )
-  }
-
   await connectToDatabase()
   const student = await Student.findById(studentId)
   if (!student) {
@@ -37,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const api = getTopJobOfferApi()
-  const source = process.env.TJO_API_MODE === "live" ? "live" : "mock"
+  let source = process.env.TJO_API_MODE === "live" ? "live" : "mock"
 
   let verified = false
   let detail: string | undefined
@@ -50,11 +43,15 @@ export async function POST(request: Request) {
     } else if (task === "profileCompleted") {
       verified = (await api.getProfileStatus(student.email)).complete
       detail = verified ? "Profile complete" : "Profile is incomplete"
-    } else {
-      // referrals
+    } else if (task === "referrals") {
       count = await api.getReferralCount(student.referralCode)
       verified = count >= REFERRALS_REQUIRED
       detail = `${count}/${REFERRALS_REQUIRED} referrals`
+    } else {
+      // socialShared: self-confirmed (following our pages can't be auto-verified).
+      verified = true
+      detail = "Followed"
+      source = "self"
     }
   } catch (err) {
     console.error("[tasks/verify] verification call failed", err)
