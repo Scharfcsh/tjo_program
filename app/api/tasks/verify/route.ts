@@ -35,14 +35,21 @@ export async function POST(request: Request) {
   let verified = false
   let detail: string | undefined
   let count: number | undefined
+  let missing: string[] | undefined
 
   try {
     if (task === "accountCreated") {
       verified = (await api.verifyAccount(student.email)).exists
       detail = verified ? "Account found" : "No account found for your email"
     } else if (task === "profileCompleted") {
-      verified = (await api.getProfileStatus(student.email)).complete
-      detail = verified ? "Profile complete" : "Profile is incomplete"
+      const status = await api.getProfileStatus(student.email)
+      verified = status.complete
+      detail = verified
+        ? "Profile complete"
+        : status.percent != null
+          ? `Profile ${status.percent}% complete`
+          : "Profile is incomplete"
+      missing = verified ? [] : status.missing
     } else if (task === "referrals") {
       count = await api.getReferralCount(student.referralCode)
       verified = count >= REFERRALS_REQUIRED
@@ -68,6 +75,7 @@ export async function POST(request: Request) {
     source,
     detail,
     count,
+    missing,
   })
   await onboarding.save()
 

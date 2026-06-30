@@ -97,6 +97,20 @@ export function OnboardingTasks({
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   {task.description}
                 </p>
+                {!state.verified && state.missing.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-destructive">
+                      Still needed:
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {state.missing.map((field) => (
+                        <Badge key={field} variant="secondary">
+                          {field}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {task.cta && (
                   <a
                     href={task.cta.href({ referralCode })}

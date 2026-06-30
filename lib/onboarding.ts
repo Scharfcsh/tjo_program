@@ -58,9 +58,9 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
     title: `Refer ${REFERRALS_REQUIRED} friends`,
     description: `Share your referral link and get at least ${REFERRALS_REQUIRED} friends to sign up.`,
     cta: {
-      label: "Copy your referral link",
+      label: "Copy your referral link from the portal",
       href: ({ referralCode }) =>
-        `https://topjoboffer.com/?ref=${encodeURIComponent(referralCode)}`,
+        `https://topjoboffer.com/invite-earn`,
     },
   },
   {

@@ -16,6 +16,7 @@ const taskSchema = new Schema(
     source: { type: String }, // "mock" | "live" | "self"
     detail: { type: String }, // e.g. "12 referrals"
     count: { type: Number }, // referrals count, when applicable
+    missing: { type: [String], default: undefined }, // incomplete profile fields
     url: { type: String }, // submitted evidence URL (socialShared)
     reviewStatus: {
       type: String,

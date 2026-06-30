@@ -21,6 +21,7 @@ export type TaskView = {
   verifiedAt: string | null
   detail: string | null
   count: number | null
+  missing: string[]
   url: string | null
   reviewStatus: ReviewStatus | null
 }
@@ -49,6 +50,7 @@ export function serializeOnboarding(doc: OnboardingDocument): OnboardingView {
       verifiedAt: slot?.verifiedAt ? new Date(slot.verifiedAt).toISOString() : null,
       detail: slot?.detail ?? null,
       count: typeof slot?.count === "number" ? slot.count : null,
+      missing: Array.isArray(slot?.missing) ? (slot.missing as string[]) : [],
       url: slot?.url ?? null,
       reviewStatus: (slot?.reviewStatus as ReviewStatus | undefined) ?? null,
     }

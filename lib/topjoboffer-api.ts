@@ -30,9 +30,23 @@ type ReferralsResponse = {
   referrals?: { plan?: string; paymentStatus?: string }[]
 }
 
+export type ProfileStatus = {
+  complete: boolean
+  percent: number | null
+  /** Labels of profile fields still incomplete. */
+  missing: string[]
+}
+
+type ProfileStatusResponse = {
+  complete?: boolean | null
+  percent?: number | null
+  missing?: (string | { label?: string })[]
+  checks?: { label?: string; done?: boolean }[]
+}
+
 export interface TopJobOfferApi {
   verifyAccount(email: string): Promise<{ exists: boolean }>
-  getProfileStatus(email: string): Promise<{ complete: boolean }>
+  getProfileStatus(email: string): Promise<ProfileStatus>
   getReferralCount(referralCode: string): Promise<number>
   getReferralStats(email: string): Promise<ReferralStats>
 }
@@ -52,7 +66,7 @@ const mockApi: TopJobOfferApi = {
     return { exists: true }
   },
   async getProfileStatus() {
-    return { complete: true }
+    return { complete: true, percent: 100, missing: [] }
   },
   async getReferralCount(referralCode) {
     // Always clears the threshold, but varies per code for realism.
@@ -89,8 +103,22 @@ function liveApi(): TopJobOfferApi {
   return {
     verifyAccount: (email) =>
       get(`/ambassadors/verify-account?email=${encodeURIComponent(email)}`),
-    getProfileStatus: (email) =>
-      get(`/ambassadors/profile-status?email=${encodeURIComponent(email)}`),
+    getProfileStatus: async (email) => {
+      const data = await get<ProfileStatusResponse>(
+        `/ambassadors/profile-status?email=${encodeURIComponent(email)}`
+      )
+      const percent = typeof data.percent === "number" ? data.percent : null
+      const fromMissing = Array.isArray(data.missing)
+        ? data.missing.map((m) => (typeof m === "string" ? m : m?.label))
+        : Array.isArray(data.checks)
+          ? data.checks.filter((c) => !c.done).map((c) => c.label)
+          : []
+      const missing = fromMissing.filter(
+        (label): label is string => Boolean(label && label.trim())
+      )
+      const complete = data.complete === true || percent === 100
+      return { complete, percent, missing }
+    },
     getReferralCount: async (referralCode) => {
       const { count } = await get<{ count: number }>(
         `/ambassadors/referrals?code=${encodeURIComponent(referralCode)}`
