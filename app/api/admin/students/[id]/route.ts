@@ -8,10 +8,11 @@ import { isAdmin } from "@/lib/session"
 import { signMagicToken } from "@/lib/auth"
 import { appUrl } from "@/lib/urls"
 import { sendEmail } from "@/lib/email/client"
+import { WelcomeEmail } from "@/lib/email/Welcome"
 import { ShortlistEmail } from "@/lib/email/Shortlist"
 import { SelectedEmail } from "@/lib/email/Selected"
 
-const ACTIONS = ["shortlist", "select", "reject"] as const
+const ACTIONS = ["shortlist", "select", "reject", "resend"] as const
 type Action = (typeof ACTIONS)[number]
 
 export async function POST(
@@ -66,9 +67,47 @@ export async function POST(
         react: createElement(SelectedEmail, { name: student.name, dashboardUrl }),
       })
     )
-  } else {
+  } else if (action === "reject") {
     student.status = "rejected"
     await student.save()
+  } else {
+    // resend: re-send whatever email matches the current status, without
+    // mutating status/timestamps.
+    if (student.status === "registered") {
+      await safeSend(() =>
+        sendEmail({
+          to: student.email,
+          subject: "You're registered — TopJobOffer Ambassadors",
+          react: createElement(WelcomeEmail, { name: student.name }),
+        })
+      )
+    } else if (student.status === "shortlisted") {
+      const token = await signMagicToken(student._id.toString())
+      const loginUrl = appUrl(request, `/portal/enter?token=${token}`)
+      await safeSend(() =>
+        sendEmail({
+          to: student.email,
+          subject: "You're shortlisted — start your onboarding",
+          react: createElement(ShortlistEmail, { name: student.name, loginUrl }),
+        })
+      )
+    } else if (student.status === "selected" || student.status === "active") {
+      const dashboardUrl = appUrl(request, "/dashboard")
+      await safeSend(() =>
+        sendEmail({
+          to: student.email,
+          subject: "You're officially a TopJobOffer Ambassador!",
+          react: createElement(SelectedEmail, { name: student.name, dashboardUrl }),
+        })
+      )
+    } else {
+      return NextResponse.json(
+        { ok: false, error: "No email to resend for this status." },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({ ok: true, status: student.status, resent: true })
   }
 
   return NextResponse.json({ ok: true, status: student.status })

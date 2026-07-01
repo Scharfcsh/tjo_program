@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import type { StudentStatus } from "@/lib/models/Student"
 import { Button } from "@/components/ui/button"
 
-type Action = "shortlist" | "select" | "reject"
+type Action = "shortlist" | "select" | "reject" | "resend"
 
 export function StudentActions({
   id,
@@ -32,7 +32,7 @@ export function StudentActions({
         toast.error(data.error ?? "Action failed.")
         return
       }
-      toast.success(`Marked as ${data.status}.`)
+      toast.success(action === "resend" ? "Mail resent." : `Marked as ${data.status}.`)
       router.refresh()
     } catch {
       toast.error("Network error. Please try again.")
@@ -44,6 +44,7 @@ export function StudentActions({
   const canShortlist = status === "registered"
   const canSelect = status === "shortlisted"
   const canReject = status !== "rejected" && status !== "active"
+  const canResend = status !== "rejected"
 
   return (
     <div className="flex justify-end gap-1.5">
@@ -74,6 +75,16 @@ export function StudentActions({
           onClick={() => run("reject")}
         >
           Reject
+        </Button>
+      )}
+      {canResend && (
+        <Button
+          size="xs"
+          variant="secondary"
+          disabled={pending !== null}
+          onClick={() => run("resend")}
+        >
+          Resend Mail
         </Button>
       )}
     </div>
